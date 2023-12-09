@@ -1,0 +1,21 @@
+{
+  "name": "promise-postmessage",
+  "version": "1.2.0",
+  "description": "Simple promise based post message",
+  "module": "index.js",
+  "main": "dist/index.js",
+  "repository": {
+        "type": "git",
+        "url": "git+https://github.com/fabulatedev/postmessage-promise.git"
+  },
+  "scripts": {
+    "dist": "rollup --bundleConfigAsCjs -c",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "ashubham@gmail.com",
+  "license": "ISC",
+  "dependencies": {
+    "rollup": "^4.0.2"
+  }
+}
