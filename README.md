@@ -21,12 +21,12 @@ onMessage(
 );
 
 const resp = await sendMessage(
-    // Message payload
-    { foo: 'bar' }, 
-
     // target frame window.
     document.getElementById('iframe')
         .contentWindow
+
+    // Message payload
+    { foo: 'bar' }, 
 );
 ```
 
@@ -38,10 +38,10 @@ const frame1 = document.getElementById("frame1").contentWindow;
 const frame2 = window.parent; // Or could be another child iframe.
 
 onMessage((event) => {
-    return sendMessage(event.data, frame2);
+    return sendMessage(frame2, event.data);
 }, frame1);
 
 onMessage((event) => {
-    return sendMessage(event.data, frame1);
+    return sendMessage(frame1, event.data);
 }, frame2);
 ```

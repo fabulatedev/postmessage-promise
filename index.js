@@ -2,7 +2,7 @@
  * Listen to messages from a source frame.
  * 
  * @param {*} cb 
- * @param {*} source 
+ * @param {*} source - optional source frame, listens to all messages if not provided.
  */
 export function onMessage(cb, source) {
     window.addEventListener('message', async (event) => {
@@ -20,11 +20,11 @@ export function onMessage(cb, source) {
 /**
  * Send messages to a target frame.
  * 
- * @param {*} message 
- * @param {*} target 
+ * @param {*} target
+ * @param {*} message  
  * @returns Promose<Response>
  */
-export function sendMessage(message, target) {
+export function sendMessage(target, message) {
     if (!target) {
         console.error('No target provided to sendMessage');
         return;
