@@ -9,7 +9,7 @@ export function onMessage(cb, source) {
         if (source && event.source !== source) {
             return;
         }
-        const response = await cb(event);
+        const response = await cb(event.data);
         const port = event.ports[0];
         if (port) {
             port.postMessage(response);
@@ -32,7 +32,7 @@ export function sendMessage(target, message) {
     const channel = new MessageChannel();
     return new Promise((resolve, reject) => {
         channel.port1.onmessage = (event) => {
-            resolve(event);
+            resolve(event.data);
         };
         target.postMessage(message, '*', [channel.port2]);
     });

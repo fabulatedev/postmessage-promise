@@ -1,6 +1,6 @@
 {
   "name": "promise-postmessage",
-  "version": "2.1.0",
+  "version": "2.3.0",
   "description": "Simple promise based post message",
   "module": "index.js",
   "main": "dist/index.js",
