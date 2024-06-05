@@ -12,20 +12,24 @@ export function addMessageBusToElementIfNotPresent(el) {
     return el;
 }
 
+export type Endpoint = 'parent' | 'child';
+
 class MessageBus {
+    private listeners: Function[][];
+
     constructor() {
         this.listeners = [[], []];
     }
 
 
-    addListener(cb, endpoint) {
-       this.#validateEndpoint(endpoint);
+    addListener(cb, endpoint: Endpoint) {
+        this.#validateEndpoint(endpoint);
 
-       const idx = this.#getIdx(endpoint);
-       this.listeners[idx - 1].push(cb);
+        const idx = this.#getIdx(endpoint);
+        this.listeners[idx - 1].push(cb);
     }
 
-    removeListener(cb, endpoint) {
+    removeListener(cb, endpoint: Endpoint) {
         this.#validateEndpoint(endpoint);
 
         const idx = this.#getIdx(endpoint);
@@ -35,7 +39,7 @@ class MessageBus {
         }
     }
 
-    emit(data, endpoint) {
+    emit(data, endpoint: Endpoint) {
         this.#validateEndpoint(endpoint);
         const idx = this.#getIdx(endpoint);
         const listenerIdx = 1 - (idx - 1);
@@ -43,12 +47,12 @@ class MessageBus {
         return Promise.race(this.listeners[listenerIdx].map(cb => cb(payload)));
     }
 
-    #getIdx(endpoint) {
+    #getIdx(endpoint: Endpoint) {
         return endpoint === 'parent' ? 1 : 2;
     }
 
-    #validateEndpoint(endpoint) {
-        if(endpoint !== 'parent' && endpoint !== 'child') {
+    #validateEndpoint(endpoint: Endpoint) {
+        if (endpoint !== 'parent' && endpoint !== 'child') {
             throw new Error('Index is either parent or child');
         }
     }

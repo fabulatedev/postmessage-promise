@@ -1,9 +1,11 @@
 {
   "name": "promise-postmessage",
-  "version": "3.0.1",
+  "version": "3.1.0",
   "description": "Simple promise based post message",
-  "module": "index.js",
+  "module": "esm/index.js",
   "main": "dist/index.js",
+  "types": "esm/index.d.ts",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/fabulatedev/postmessage-promise.git"
@@ -12,7 +14,8 @@
     "dist": "rollup --bundleConfigAsCjs -c",
     "test": "vitest",
     "dev": "vite",
-    "prepublishOnly": "npm run dist"
+    "tsc": "tsc",
+    "prepublishOnly": "npm run tsc && npm run dist"
   },
   "keywords": [],
   "author": "ashubham@gmail.com",

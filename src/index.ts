@@ -1,4 +1,4 @@
-import { addMessageBusToElementIfNotPresent, isWindow, isWindowOrIframe } from "./util";
+import { Endpoint, addMessageBusToElementIfNotPresent, isWindow, isWindowOrIframe } from "./util";
 
 /**
  * Listen to messages from a source frame | DOM Node.
@@ -6,12 +6,12 @@ import { addMessageBusToElementIfNotPresent, isWindow, isWindowOrIframe } from "
  * @param {*} cb 
  * @param {*} source - optional source frame, listens to all messages if not provided.
  */
-export function onMessage(cb, source, endpoint) {
-    if(!source || isWindowOrIframe(source)) {
+export function onMessage(cb: (data: any) => Promise<any> | any, source?: HTMLElement | Window, endpoint?: Endpoint) {
+    if (!source || isWindowOrIframe(source)) {
         let sourceWindow = isWindow(source) ? source : null;
-        window.addEventListener('message', async (event) => {
+        const _callback = async (event) => {
             if (source) {
-                sourceWindow = sourceWindow || source.contentWindow;
+                sourceWindow = sourceWindow || (source as any).contentWindow;
                 if (sourceWindow !== event.source) {
                     return;
                 }
@@ -21,25 +21,17 @@ export function onMessage(cb, source, endpoint) {
             if (port) {
                 port.postMessage(response);
             }
-        });
+        }
+        window.addEventListener('message', _callback);
+        return () => {
+            window.removeEventListener('message', _callback);
+        }
     } else {
         addMessageBusToElementIfNotPresent(source);
-        source.messageBus.addListener(cb, endpoint);
-    }
-}
-
-/**
- * Removes a listener from a source frame | DOM Node.
- * @param {*} cb 
- * @param {*} source 
- * @param {*} endpoint 
- */
-export function offMessage(cb, source, endpoint) {
-    if(!source || isWindowOrIframe(source)) {
-        window.removeEventListener('message', cb);
-    } else {
-        addMessageBusToElementIfNotPresent(source);
-        source.messageBus.removeListener(cb, endpoint);
+        (source as any).messageBus.addListener(cb, endpoint);
+        return () => {
+            (source as any).messageBus.removeListener(cb, endpoint);
+        }
     }
 }
 
@@ -50,21 +42,21 @@ export function offMessage(cb, source, endpoint) {
  * @param {*} message  
  * @returns Promose<Response>
  */
-export function sendMessage(target, message, origin, endpoint) {
+export function sendMessage(target: HTMLElement | Window, message: any, origin?: string, endpoint?: Endpoint) {
     if (!target) {
         throw new Error('No target provided to sendMessage');
     }
 
-    if(isWindow(target)) {
+    if (isWindow(target)) {
         const channel = new MessageChannel();
         return new Promise((resolve, reject) => {
             channel.port1.onmessage = (event) => {
                 resolve(event.data);
             };
-            target.postMessage(message, origin || '*', [channel.port2]);
+            (target as Window).postMessage(message, origin || '*', [channel.port2]);
         });
     }
 
     addMessageBusToElementIfNotPresent(target);
-    return target.messageBus.emit(message, endpoint);
+    return (target as any).messageBus.emit(message, endpoint);
 }

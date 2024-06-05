@@ -1,14 +1,12 @@
 import { expect, test, vi } from "vitest";
-import { sendMessage, onMessage, offMessage } from "../src/index.js";
-
-window.pm = { onMessage, sendMessage };
+import { sendMessage, onMessage } from "../src/index.js";
 
 test("sendMessage/onMessage Iframe", async () => {
-    const iframe = document.createElement('iframe');
+    const iframe: HTMLIFrameElement = document.createElement('iframe');
     iframe.srcdoc = `
         <script type="module">
             console.log(import.meta.url);
-            import { sendMessage, onMessage } from '/src/index.js';
+            import { sendMessage, onMessage } from '/src/index';
             sendMessage(window.parent, 'Init');
 
             onMessage(async (message) => {
@@ -18,23 +16,23 @@ test("sendMessage/onMessage Iframe", async () => {
 
     document.body.appendChild(iframe);
 
-    let cb;
-    const done = new Promise((resolve) => {
+    let cb, unlisten;
+    const done = new Promise<void>((resolve) => {
         cb = vi.fn(async (message) => {
             expect(message).toBe('Init');
-            const response = await sendMessage(iframe.contentWindow, 'Hello');
+            const response = await sendMessage(iframe.contentWindow as Window, 'Hello');
             expect(response).toBe('World');
             resolve();
         });
-        onMessage(cb, iframe);
+        unlisten = onMessage(cb, iframe);
     });
-    
+
     await done;
 
     const iframe2 = document.createElement('iframe');
     iframe2.srcdoc = `
         <script type="module">
-            import { sendMessage, onMessage } from '/src/index.js';
+            import { sendMessage, onMessage } from '/src/index';
             sendMessage(window.parent, 'Init');
         </script>`;
     document.body.appendChild(iframe2);
@@ -44,7 +42,7 @@ test("sendMessage/onMessage Iframe", async () => {
     expect(cb).toHaveBeenCalledTimes(1);
 
     const spy = vi.spyOn(window, 'removeEventListener');
-    offMessage(cb, iframe);
+    unlisten();
     expect(spy).toHaveBeenCalledTimes(1);
 
     try {
@@ -58,7 +56,7 @@ test("sendMessage/onMessage DOM Element", async () => {
     const div = document.createElement('div');
     document.body.appendChild(div);
 
-    const done = new Promise((resolve) => {
+    const done = new Promise<void>((resolve) => {
         onMessage(async (message) => {
             expect(message).toBe('Init');
             const response = await sendMessage(div, 'Hello', null, 'parent');
@@ -71,12 +69,12 @@ test("sendMessage/onMessage DOM Element", async () => {
     let childCb = vi.fn(async (message) => {
         return Promise.resolve('World');
     });
-    onMessage(childCb, div, 'child');
+    const unlistenChild = onMessage(childCb, div, 'child');
 
     sendMessage(div, 'Init', null, 'child');
     await done;
 
-    offMessage(childCb, div, 'child');
+    unlistenChild();
 
     sendMessage(div, 'Hello', null, 'parent');
 

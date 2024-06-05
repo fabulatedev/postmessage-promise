@@ -8,7 +8,7 @@ export default defineConfig({
         },
         coverage: {
             enabled: true,
-            include: ['src/**/*.js'],
+            include: ['src/**/*.ts'],
             provider: 'istanbul',
         },
     }
