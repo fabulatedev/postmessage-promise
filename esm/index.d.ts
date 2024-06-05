@@ -5,7 +5,7 @@ import { Endpoint } from "./util";
  * @param {*} cb
  * @param {*} source - optional source frame, listens to all messages if not provided.
  */
-export declare function onMessage(cb: (data: any) => Promise<any> | any, source?: HTMLElement | Window, endpoint?: Endpoint): () => void;
+export declare function onMessage(cb: (data: any) => Promise<any> | any, source?: HTMLIFrameElement | HTMLElement | Window, endpoint?: Endpoint): () => void;
 /**
  * Send messages to a target frame.
  *
@@ -13,4 +13,4 @@ export declare function onMessage(cb: (data: any) => Promise<any> | any, source?
  * @param {*} message
  * @returns Promose<Response>
  */
-export declare function sendMessage(target: HTMLElement | Window, message: any, origin?: string, endpoint?: Endpoint): any;
+export declare function sendMessage(target: HTMLIFrameElement | HTMLElement | Window, message: any, origin?: string, endpoint?: Endpoint): any;

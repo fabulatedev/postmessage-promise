@@ -45,13 +45,17 @@ export function sendMessage(target, message, origin, endpoint) {
     if (!target) {
         throw new Error('No target provided to sendMessage');
     }
-    if (isWindow(target)) {
+    if (isWindowOrIframe(target)) {
+        const targetWindow = isWindow(target) ? target : target.contentWindow;
+        if (!targetWindow) {
+            throw new Error('Target window is not available');
+        }
         const channel = new MessageChannel();
         return new Promise((resolve, reject) => {
             channel.port1.onmessage = (event) => {
                 resolve(event.data);
             };
-            target.postMessage(message, origin || '*', [channel.port2]);
+            targetWindow.postMessage(message, origin || '*', [channel.port2]);
         });
     }
     addMessageBusToElementIfNotPresent(target);
