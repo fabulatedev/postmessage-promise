@@ -1,6 +1,6 @@
 {
   "name": "promise-postmessage",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Simple promise based post message",
   "module": "index.js",
   "main": "dist/index.js",
@@ -11,7 +11,8 @@
   "scripts": {
     "dist": "rollup --bundleConfigAsCjs -c",
     "test": "vitest",
-    "dev": "vite"
+    "dev": "vite",
+    "prepublishOnly": "npm run dist"
   },
   "keywords": [],
   "author": "ashubham@gmail.com",
