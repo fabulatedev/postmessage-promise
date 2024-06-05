@@ -1,17 +1,16 @@
-import { Endpoint, addMessageBusToElementIfNotPresent, isWindow, isWindowOrIframe } from "./util";
-
+import { addMessageBusToElementIfNotPresent, isWindow, isWindowOrIframe } from "./util";
 /**
  * Listen to messages from a source frame | DOM Node.
- * 
- * @param {*} cb 
+ *
+ * @param {*} cb
  * @param {*} source - optional source frame, listens to all messages if not provided.
  */
-export function onMessage(cb: (data: any) => Promise<any> | any, source?: HTMLIFrameElement | HTMLElement | Window, endpoint?: Endpoint) {
+export function onMessage(cb, source, endpoint) {
     if (!source || isWindowOrIframe(source)) {
         let sourceWindow = isWindow(source) ? source : null;
         const _callback = async (event) => {
             if (source) {
-                sourceWindow = sourceWindow || (source as any).contentWindow;
+                sourceWindow = sourceWindow || source.contentWindow;
                 if (sourceWindow !== event.source) {
                     return;
                 }
@@ -21,48 +20,40 @@ export function onMessage(cb: (data: any) => Promise<any> | any, source?: HTMLIF
             if (port) {
                 port.postMessage(response);
             }
-        }
+        };
         window.addEventListener('message', _callback);
         return () => {
             window.removeEventListener('message', _callback);
-        }
-    } else {
+        };
+    }
+    else {
         addMessageBusToElementIfNotPresent(source);
-        (source as any).messageBus.addListener(cb, endpoint);
+        source.messageBus.addListener(cb, endpoint);
         return () => {
-            (source as any).messageBus.removeListener(cb, endpoint);
-        }
+            source.messageBus.removeListener(cb, endpoint);
+        };
     }
 }
-
 /**
  * Send messages to a target frame.
- * 
+ *
  * @param {*} target
- * @param {*} message  
+ * @param {*} message
  * @returns Promose<Response>
  */
-export function sendMessage(target: HTMLIFrameElement | HTMLElement | Window, message: any, origin?: string, endpoint?: Endpoint) {
+export function sendMessage(target, message, origin, endpoint) {
     if (!target) {
         throw new Error('No target provided to sendMessage');
     }
-
-    if (isWindowOrIframe(target)) {
-        const targetWindow = isWindow(target) ? target as Window : (target as HTMLIFrameElement).contentWindow;
-
-        if (!targetWindow) {
-            throw new Error('Target window is not available');
-        }
-
+    if (isWindow(target)) {
         const channel = new MessageChannel();
         return new Promise((resolve, reject) => {
             channel.port1.onmessage = (event) => {
                 resolve(event.data);
             };
-            targetWindow.postMessage(message, origin || '*', [channel.port2]);
+            target.postMessage(message, origin || '*', [channel.port2]);
         });
     }
-
     addMessageBusToElementIfNotPresent(target);
-    return (target as any).messageBus.emit(message, endpoint);
+    return target.messageBus.emit(message, endpoint);
 }

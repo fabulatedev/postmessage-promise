@@ -1,4 +1,5 @@
-# postmessage-promise
+# postmessage-promise 
+[![Coverage Status](https://coveralls.io/repos/github/fabulatedev/postmessage-promise/badge.svg?branch=main)](https://coveralls.io/github/fabulatedev/postmessage-promise?branch=main) [![npm version](https://badge.fury.io/js/promise-postmessage.svg)](https://badge.fury.io/js/promise-postmessage)
 
 Simple promise based post message / listener.
 
