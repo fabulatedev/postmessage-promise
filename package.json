@@ -1,21 +1,29 @@
 {
   "name": "promise-postmessage",
-  "version": "2.3.0",
+  "version": "3.0.0",
   "description": "Simple promise based post message",
   "module": "index.js",
   "main": "dist/index.js",
   "repository": {
-        "type": "git",
-        "url": "git+https://github.com/fabulatedev/postmessage-promise.git"
+    "type": "git",
+    "url": "git+https://github.com/fabulatedev/postmessage-promise.git"
   },
   "scripts": {
     "dist": "rollup --bundleConfigAsCjs -c",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest",
+    "dev": "vite"
   },
   "keywords": [],
   "author": "ashubham@gmail.com",
   "license": "ISC",
   "dependencies": {
     "rollup": "^4.0.2"
+  },
+  "devDependencies": {
+    "@vitest/browser": "^1.6.0",
+    "@vitest/coverage-istanbul": "^1.6.0",
+    "vite": "^5.2.12",
+    "vitest": "^1.6.0",
+    "webdriverio": "^8.38.2"
   }
 }
