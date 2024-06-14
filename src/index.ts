@@ -42,7 +42,7 @@ export function onMessage(cb: (data: any) => Promise<any> | any, source?: HTMLIF
  * @param {*} message  
  * @returns Promose<Response>
  */
-export function sendMessage(target: HTMLIFrameElement | HTMLElement | Window, message: any, origin?: string, endpoint?: Endpoint) {
+export function sendMessage(target: HTMLIFrameElement | HTMLElement | Window, message: any, options: { origin?: string, endpoint?: Endpoint, needsResponse?: boolean } = {}): Promise<any> {
     if (!target) {
         throw new Error('No target provided to sendMessage');
     }
@@ -57,12 +57,15 @@ export function sendMessage(target: HTMLIFrameElement | HTMLElement | Window, me
         const channel = new MessageChannel();
         return new Promise((resolve, reject) => {
             channel.port1.onmessage = (event) => {
+                if (options.needsResponse && !event.data) {
+                    return;
+                }
                 resolve(event.data);
             };
-            targetWindow.postMessage(message, origin || '*', [channel.port2]);
+            targetWindow.postMessage(message, options.origin || '*', [channel.port2]);
         });
     }
 
     addMessageBusToElementIfNotPresent(target);
-    return (target as any).messageBus.emit(message, endpoint);
+    return (target as any).messageBus.emit(message, options.endpoint);
 }

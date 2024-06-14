@@ -59,7 +59,7 @@ test("sendMessage/onMessage DOM Element", async () => {
     const done = new Promise<void>((resolve) => {
         onMessage(async (message) => {
             expect(message).toBe('Init');
-            const response = await sendMessage(div, 'Hello', null, 'parent');
+            const response = await sendMessage(div, 'Hello', { endpoint: 'parent' });
             expect(response).toBe('World');
             resolve();
         }, div, 'parent');
@@ -71,19 +71,19 @@ test("sendMessage/onMessage DOM Element", async () => {
     });
     const unlistenChild = onMessage(childCb, div, 'child');
 
-    sendMessage(div, 'Init', null, 'child');
+    sendMessage(div, 'Init', { endpoint: 'child' });
     await done;
 
     unlistenChild();
 
-    sendMessage(div, 'Hello', null, 'parent');
+    sendMessage(div, 'Hello', { endpoint: 'parent' });
 
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     expect(childCb).toHaveBeenCalledTimes(1);
 
     try {
-        sendMessage(div, 'Hello', null, 'child1');
+        sendMessage(div, 'Hello', { endpoint: 'child1' });
     } catch (e) {
         expect(e.message).toBe('Index is either parent or child');
     }
