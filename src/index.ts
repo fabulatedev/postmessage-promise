@@ -1,4 +1,4 @@
-import { Endpoint, addMessageBusToElementIfNotPresent, isWindow, isWindowOrIframe } from "./util";
+import { Endpoint, addMessageBusToElementIfNotPresent, isPlainObject, isWindow, isWindowOrIframe } from "./util";
 
 /**
  * Listen to messages from a source frame | DOM Node.
@@ -6,7 +6,7 @@ import { Endpoint, addMessageBusToElementIfNotPresent, isWindow, isWindowOrIfram
  * @param {*} cb 
  * @param {*} source - optional source frame, listens to all messages if not provided.
  */
-export function onMessage(cb: (data: any) => Promise<any> | any, source?: HTMLIFrameElement | HTMLElement | Window, endpoint?: Endpoint) {
+export function onMessage(cb: (data: any) => Promise<any> | any, source?: HTMLIFrameElement | HTMLElement | Window, endpoint?: Endpoint, channelId?: string) {
     if (!source || isWindowOrIframe(source)) {
         let sourceWindow = isWindow(source) ? source : null;
         const _callback = async (event) => {
@@ -16,6 +16,14 @@ export function onMessage(cb: (data: any) => Promise<any> | any, source?: HTMLIF
                     return;
                 }
             }
+
+            // Skip processing if channelId doesn't match
+            if (isPlainObject(event.data) &&
+                event.data.channelId &&
+                event.data.channelId !== channelId) {
+                return;
+            }
+
             const response = await cb(event.data);
             const port = event.ports[0];
             if (port) {
@@ -42,7 +50,7 @@ export function onMessage(cb: (data: any) => Promise<any> | any, source?: HTMLIF
  * @param {*} message  
  * @returns Promose<Response>
  */
-export function sendMessage(target: HTMLIFrameElement | HTMLElement | Window, message: any, options: { origin?: string, endpoint?: Endpoint, needsResponse?: boolean } = {}): Promise<any> {
+export function sendMessage(target: HTMLIFrameElement | HTMLElement | Window, message: any, options: { origin?: string, endpoint?: Endpoint, needsResponse?: boolean } = {}, channelId?: string): Promise<any> {
     if (!target) {
         throw new Error('No target provided to sendMessage');
     }
@@ -62,6 +70,13 @@ export function sendMessage(target: HTMLIFrameElement | HTMLElement | Window, me
                 }
                 resolve(event.data);
             };
+            // @TODO: We are using this approach to make the library backward compatible,
+            // so that if the receiving side is using older version, it does not break.
+            // But, we need to use a better approach eventually, like we need to send the payload in this format:
+            // targetWindow.postMessage({ message, channelId }, options.origin || '*', [channel.port2]);
+            if (isPlainObject(message)) {
+                message["channelId"] = channelId;
+            }
             targetWindow.postMessage(message, options.origin || '*', [channel.port2]);
         });
     }
