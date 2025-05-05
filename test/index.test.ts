@@ -88,3 +88,50 @@ test("sendMessage/onMessage DOM Element", async () => {
         expect(e.message).toBe('Index is either parent or child');
     }
 });
+
+test("Skip callback processing", async () => {
+    const iframe: HTMLIFrameElement = document.createElement('iframe');
+    iframe.srcdoc = `
+        <script type="module">
+            import { sendMessage, onMessage, ON_MESSAGE_CALLBACK_SKIP_PROCESSING } from '/src/index';
+
+            sendMessage(window.parent, 'Init');
+
+            onMessage(async (message) => {
+                console.log(message);
+                if (message.type === "a") {
+                    return "data_for_a";
+                } else {
+                    return ON_MESSAGE_CALLBACK_SKIP_PROCESSING;
+                }
+            }, window.parent);
+
+            onMessage(async (message) => {
+                console.log(message);
+                if (message.type === "b") {
+                    return "data_for_b";
+                } else {
+                    return ON_MESSAGE_CALLBACK_SKIP_PROCESSING;
+                }
+            }, window.parent);
+        </script>`;
+
+    document.body.appendChild(iframe);
+
+    const done = new Promise<void>((resolve) => {
+        const cb = vi.fn(async (message) => {
+            expect(message).toBe('Init');
+
+            const response1 = await sendMessage(iframe.contentWindow as Window, { type: "a" });
+            expect(response1).toBe("data_for_a");
+
+            const response2 = await sendMessage(iframe.contentWindow as Window, { type: "b" });
+            expect(response2).toBe("data_for_b");
+
+            resolve();
+        });
+        onMessage(cb, iframe);
+    });
+
+    await done;
+});

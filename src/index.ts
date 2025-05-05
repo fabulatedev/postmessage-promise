@@ -74,3 +74,5 @@ export function sendMessage(target: HTMLIFrameElement | HTMLElement | Window, me
     addMessageBusToElementIfNotPresent(target);
     return (target as any).messageBus.emit(message, options.endpoint);
 }
+
+export { ON_MESSAGE_CALLBACK_SKIP_PROCESSING };
