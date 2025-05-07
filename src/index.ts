@@ -1,3 +1,4 @@
+import { ON_MESSAGE_CALLBACK_SKIP_PROCESSING } from "./constants";
 import { Endpoint, addMessageBusToElementIfNotPresent, isWindow, isWindowOrIframe } from "./util";
 
 /**
@@ -17,6 +18,10 @@ export function onMessage(cb: (data: any) => Promise<any> | any, source?: HTMLIF
                 }
             }
             const response = await cb(event.data);
+            if (response === ON_MESSAGE_CALLBACK_SKIP_PROCESSING) {
+                return;
+            }
+
             const port = event.ports[0];
             if (port) {
                 port.postMessage(response);
@@ -69,3 +74,5 @@ export function sendMessage(target: HTMLIFrameElement | HTMLElement | Window, me
     addMessageBusToElementIfNotPresent(target);
     return (target as any).messageBus.emit(message, options.endpoint);
 }
+
+export { ON_MESSAGE_CALLBACK_SKIP_PROCESSING };
