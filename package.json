@@ -1,6 +1,6 @@
 {
   "name": "promise-postmessage",
-  "version": "3.6.0",
+  "version": "3.7.0",
   "description": "Simple promise based post message",
   "module": "esm/index.js",
   "types": "esm/index.d.ts",
