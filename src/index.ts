@@ -47,7 +47,7 @@ export function onMessage(cb: (data: any) => Promise<any> | any, source?: HTMLIF
  * @param {*} message  
  * @returns Promose<Response>
  */
-export function sendMessage(target: HTMLIFrameElement | HTMLElement | Window, message: any, options: { origin?: string, endpoint?: Endpoint, needsResponse?: boolean, isValidResponse?: (data: any) => boolean } = {}): Promise<any> {
+export function sendMessage(target: HTMLIFrameElement | HTMLElement | Window, message: any, options: { origin?: string, endpoint?: Endpoint, needsResponse?: boolean, isValidResponse?: (data: any) => boolean, closeAfterMs?: number } = {}): Promise<any> {
     if (!target) {
         throw new Error('No target provided to sendMessage');
     }
@@ -61,9 +61,25 @@ export function sendMessage(target: HTMLIFrameElement | HTMLElement | Window, me
 
         const channel = new MessageChannel();
         return new Promise((resolve, reject) => {
+            let closeTimer: ReturnType<typeof setTimeout> | undefined;
+
+            const closeChannel = () => {
+                if (closeTimer !== undefined) {
+                    clearTimeout(closeTimer);
+                    closeTimer = undefined;
+                }
+                channel.port1.onmessage = null;
+                try {
+                    channel.port1.close();
+                } catch (e) {
+                    // noop
+                }
+            };
+
             channel.port1.onmessage = (event) => {
                 if (options.isValidResponse) {
                     if (options.isValidResponse(event.data)) {
+                        closeChannel();
                         resolve(event.data);
                     }
                     return;
@@ -72,8 +88,14 @@ export function sendMessage(target: HTMLIFrameElement | HTMLElement | Window, me
                 if (options.needsResponse && !event.data) {
                     return;
                 }
+                closeChannel();
                 resolve(event.data);
             };
+
+            if (typeof options.closeAfterMs === 'number' && options.closeAfterMs > 0) {
+                closeTimer = setTimeout(closeChannel, options.closeAfterMs);
+            }
+
             targetWindow.postMessage(message, options.origin || '*', [channel.port2]);
         });
     }

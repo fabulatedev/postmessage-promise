@@ -135,3 +135,90 @@ test("Skip callback processing", async () => {
 
     await done;
 });
+test("sendMessage closes the request channel once it resolves", async () => {
+    const channels: MessageChannel[] = [];
+    const OriginalMessageChannel = window.MessageChannel;
+    const closeSpies: any[] = [];
+    (window as any).MessageChannel = class extends OriginalMessageChannel {
+        constructor() {
+            super();
+            channels.push(this as unknown as MessageChannel);
+            closeSpies.push(vi.spyOn(this.port1, 'close'));
+        }
+    };
+
+    try {
+        const target: any = {
+            tagName: 'IFRAME',
+            contentWindow: {
+                postMessage: (_msg: any, _origin: string, transfer: MessagePort[]) =>
+                    transfer[0].postMessage('World'),
+            },
+        };
+
+        await expect(sendMessage(target, 'Hello')).resolves.toBe('World');
+
+        expect(closeSpies[0]).toHaveBeenCalled();
+        expect(channels[0].port1.onmessage).toBeNull();
+    } finally {
+        (window as any).MessageChannel = OriginalMessageChannel;
+    }
+});
+
+test("sendMessage closes an unanswered channel after closeAfterMs", async () => {
+    const channels: MessageChannel[] = [];
+    const OriginalMessageChannel = window.MessageChannel;
+    const closeSpies: any[] = [];
+    (window as any).MessageChannel = class extends OriginalMessageChannel {
+        constructor() {
+            super();
+            channels.push(this as unknown as MessageChannel);
+            closeSpies.push(vi.spyOn(this.port1, 'close'));
+        }
+    };
+
+    try {
+        const target: any = {
+            tagName: 'IFRAME',
+            contentWindow: { postMessage: () => undefined },
+        };
+
+        let settled = false;
+        sendMessage(target, 'Hello', { closeAfterMs: 20 }).then(
+            () => { settled = true; },
+            () => { settled = true; },
+        );
+
+        await new Promise(resolve => setTimeout(resolve, 80));
+
+        expect(closeSpies[0]).toHaveBeenCalled();
+        expect(settled).toBe(false);
+    } finally {
+        (window as any).MessageChannel = OriginalMessageChannel;
+    }
+});
+
+test("sendMessage leaves the channel open while a request is pending", async () => {
+    const OriginalMessageChannel = window.MessageChannel;
+    const closeSpies: any[] = [];
+    (window as any).MessageChannel = class extends OriginalMessageChannel {
+        constructor() {
+            super();
+            closeSpies.push(vi.spyOn(this.port1, 'close'));
+        }
+    };
+
+    try {
+        const target: any = {
+            tagName: 'IFRAME',
+            contentWindow: { postMessage: () => undefined },
+        };
+
+        sendMessage(target, 'Hello');
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        expect(closeSpies[0]).not.toHaveBeenCalled();
+    } finally {
+        (window as any).MessageChannel = OriginalMessageChannel;
+    }
+});
