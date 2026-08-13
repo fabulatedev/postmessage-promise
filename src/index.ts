@@ -25,6 +25,19 @@ export function onMessage(cb: (data: any) => Promise<any> | any, source?: HTMLIF
             const port = event.ports[0];
             if (port) {
                 port.postMessage(response);
+                // The sender transferred this port to us and never gets it back,
+                // so we own its lifetime. An open port stays entangled with the
+                // sender's, which keeps the sender's realm alive - detaching the
+                // frame then frees nothing. Only close here, after we actually
+                // replied: onMessage listens on window, so every registered
+                // listener sees this same event and shares this one port. A
+                // listener that closed it on the early-return paths above would
+                // destroy the channel belonging to the real recipient.
+                try {
+                    port.close();
+                } catch (e) {
+                    // already closed
+                }
             }
         }
         window.addEventListener('message', _callback);
