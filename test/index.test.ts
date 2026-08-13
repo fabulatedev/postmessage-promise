@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { sendMessage, onMessage } from "../src/index.js";
+import { sendMessage, onMessage, ON_MESSAGE_CALLBACK_SKIP_PROCESSING } from "../src/index.js";
 
 test("sendMessage/onMessage Iframe", async () => {
     const iframe: HTMLIFrameElement = document.createElement('iframe');
@@ -220,5 +220,57 @@ test("sendMessage leaves the channel open while a request is pending", async () 
         expect(closeSpies[0]).not.toHaveBeenCalled();
     } finally {
         (window as any).MessageChannel = OriginalMessageChannel;
+    }
+});
+
+test("onMessage closes the transferred reply port after replying", async () => {
+    const channel = new MessageChannel();
+    const closeSpy = vi.spyOn(channel.port2, 'close');
+
+    const unlisten = onMessage(async (data) =>
+        data === 'Hello' ? 'World' : ON_MESSAGE_CALLBACK_SKIP_PROCESSING, window);
+
+    try {
+        const replied = new Promise<any>((resolve) => {
+            channel.port1.onmessage = (event) => resolve(event.data);
+        });
+
+        window.dispatchEvent(new MessageEvent('message', {
+            data: 'Hello',
+            source: window,
+            ports: [channel.port2],
+        }));
+
+        await expect(replied).resolves.toBe('World');
+        expect(closeSpy).toHaveBeenCalled();
+    } finally {
+        unlisten();
+        channel.port1.close();
+    }
+});
+
+test("onMessage leaves the reply port open when the callback skips", async () => {
+    const channel = new MessageChannel();
+    const closeSpy = vi.spyOn(channel.port2, 'close');
+
+    // onMessage listens on window, so every registered listener receives this
+    // event and shares the one transferred port. A listener that skips must
+    // leave it open for whichever listener actually owns the message.
+    const unlisten = onMessage(async () => ON_MESSAGE_CALLBACK_SKIP_PROCESSING, window);
+
+    try {
+        window.dispatchEvent(new MessageEvent('message', {
+            data: 'Hello',
+            source: window,
+            ports: [channel.port2],
+        }));
+
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        expect(closeSpy).not.toHaveBeenCalled();
+    } finally {
+        unlisten();
+        channel.port1.close();
+        channel.port2.close();
     }
 });
